@@ -24,16 +24,3 @@
   1. Implementar a rotina de leitura do tópico `sisdef/broadcast/revogacao`.
   2. Ao receber um JSON de revogação, validar a assinatura do remetente que emitiu o alerta para garantir que a ordem de revogação não foi forjada pelo próprio "Sombra".
   3. Se a assinatura for legítima, remover permanentemente os registros da unidade comprometida do arquivo `chaves_confiadas.json`, cortar qualquer envio de mensagens para ela e descartar sumariamente qualquer pacote recebido que contenha o identificador dela, registrando o incidente em um log de segurança persistente.
-
----
-
-## 6. Arquitetura Sugerida de Arquivos do Sistema
-
-Para manter a modularidade e garantir a corretude exigida na operação, o repositório do Jupyter Notebook / Script Python será organizado na seguinte estrutura lógica de dependências:
-
-├── config.json               # Configurações do Broker e chaves privadas locais da UT
-├── chaves_confiadas.json     # Banco de dados local de chaves públicas descobertas na rede
-├── crypto_engine.py          # Funções puras de criptografia simétrica, assimétrica e assinaturas
-├── mqtt_manager.py           # Gerenciamento de conexões, publicações e inscrições em tópicos
-└── main.py / notebook.ipynb  # Loop principal do painel tático de comando e controle
-
