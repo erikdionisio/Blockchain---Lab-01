@@ -39,7 +39,6 @@ def inicializar_unidade():
         json.dump({}, f, indent=4)
         
     print("✅ Sucesso! Arquivos 'config.json' (SEU COFRE) e 'chaves_confiadas.json' (SEUS CONTATOS) foram criados.")
-    print("A Fase 1 está concluída. A UT-Juliet agora tem identidade criptográfica!")
 
 if __name__ == "__main__":
     inicializar_unidade()
