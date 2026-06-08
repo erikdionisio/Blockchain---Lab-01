@@ -261,7 +261,4 @@ def menu_interativo():
             print("🪖 Desconectado.")
             break
 
-"""
-
 if __name__ == "__main__":
-    menu_interativo()
