@@ -52,7 +52,7 @@ def on_connect(client, userdata, flags, rc):
     payload_identidade = {
         "id_unidade": MEU_ID,
         "chave_publica_rsa": MINHAS_CHAVES["rsa_publica"],
-        "chave_publica_eddsa": MINHAS_CHAVES["ecdsa_publica"]
+        "chave_publica_ecdsa": MINHAS_CHAVES["ecdsa_publica"]
     }
     client.publish(f"sisdef/broadcast/chaves/{MEU_ID}", json.dumps(payload_identidade), retain=True)
     print(f"📣 Nossa Identidade ({MEU_ID}) foi transmitida no CCU.")
@@ -132,9 +132,7 @@ def on_message(client, userdata, msg):
         try:
             placar = json.loads(payload_texto)
             # 🛡️ BLINDAGEM: Se a mensagem for só o comando de alguém pedindo notas, ignoramos.
-            if "cmd" in placar and placar["cmd"] == "atualizar_notas":
-                return
-                
+              
             print("\n" + "🏆"*10)
             print("PLACAR DE NOTAS ATUALIZADO:")
             print(json.dumps(placar, indent=4, ensure_ascii=False))
@@ -227,7 +225,8 @@ def menu_interativo():
         print("2. Enviar Resposta do Desafio")
         print("3. Consultar Placar de Notas")
         print("4. Testar conexão com Oráculo (Echo)")
-        print("5. Emitir Alarme de Revogação")
+        print("5. Enviar ordem secreta para outra Unidade")
+        print("6. Emitir Alarme de Revogação")
         print("0. Sair e Desconectar")
         op = input("> ")
         
@@ -252,6 +251,12 @@ def menu_interativo():
             print("⏳ Solicitando teste de Echo ao Oráculo...")
             
         elif op == "5":
+            # Comunicação lateral com aliados
+            dest = input("ID do Destino (ex: ut-alfa): ").lower()
+            msg = input("Digite a Ordem (texto puro): ")
+            enviar_ordem_taticamente(dest, msg)
+            
+        elif op == "6":
             alvo = input("ID da Unidade Traidora (ex: ut-bravo): ").lower()
             enviar_ordem_revogacao(alvo)
             
@@ -262,3 +267,4 @@ def menu_interativo():
             break
 
 if __name__ == "__main__":
+    menu_interativo()
