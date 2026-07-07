@@ -2,7 +2,7 @@
 Simulador de Consenso DPoS sob a Ótica Eleitoral
 ================================================
 
-NOTA: CODIGO MODIFICADO COM AS MÉTRICAS DO GRUPO 4 (COMPRA DE VOTO)
+NOTA: CODIGO MODIFICADO COM AS MÉTRICAS DO GRUPO 4 (COMPRA DE VOTO) E TAKEOVER 51%
 
 Motor COMUM do laboratorio. Voce (aluno) NAO reescreve o motor: voce
 (1) implementa a(s) metrica(s) da sua patologia na secao marcada mais abaixo
@@ -229,7 +229,7 @@ def gini(ctx: Contexto) -> float:
 
 
 # ---------------------------------------------------------------------------
-# >>> IMPLEMENTE AQUI AS DEMAIS METRICAS DA SUA PATOLOGIA <<<
+# >>> IMPLEMENTE AQUI AS DEMAIS METRICAS <<<
 # ---------------------------------------------------------------------------
 
 def custo_por_cadeira(ctx: Contexto) -> float:
@@ -237,20 +237,15 @@ def custo_por_cadeira(ctx: Contexto) -> float:
     G4: Diferenca de votos (em stake) entre o ultimo eleito e o primeiro candidato abaixo do corte.
     Mede quão "barato" é comprar a ultima cadeira disponivel no DPoS.
     """
-    # ctx.eleitos contem os indices dos candidatos que ganharam (ordenados por score descrescente)
-    # ctx.peso_corte é o placar exato do (k+1)-ésimo candidato (primeiro que perdeu)
     if len(ctx.eleitos) == 0:
         return 0.0
         
-    # O ultimo eleito é o ultimo elemento da lista de eleitos
     ultimo_eleito_idx = ctx.eleitos[-1]
     peso_ultimo_eleito = ctx.scores[ultimo_eleito_idx]
     
-    # Se nao houver ninguem abaixo da linha de corte, o custo é o peso do ultimo eleito
     if ctx.peso_corte == 0.0:
         return float(peso_ultimo_eleito)
         
-    # A diferença é o custo real para um invasor passar a nota de corte
     diferenca = peso_ultimo_eleito - ctx.peso_corte
     return float(diferenca)
 
@@ -261,23 +256,34 @@ def custo_takeover(ctx: Contexto) -> float:
     para comprar mais de 1/3 das cadeiras do comite simultaneamente.
     > 1/3 garante poder de veto / censura na maioria das redes DPoS.
     """
-    # Quantas cadeiras representam mais de 1/3 do parlamento?
-    # Ex: se k=21, 1/3 é 7. Precisamos comprar 8 cadeiras.
     k = len(ctx.eleitos)
     if k == 0: return 0.0
     
     cadeiras_alvo = int(math.floor(k / 3.0)) + 1
     
-    # Se nao tem cadeiras suficientes para atacar, retorna 0
     if cadeiras_alvo > k:
         return 0.0
         
-    # Os scores dos eleitos estao ordenados do maior para o menor.
-    # O invasor racional tentaria comprar os 'cadeiras_alvo' eleitos MAIS BARATOS.
-    # Ou seja, os ultimos 'cadeiras_alvo' elementos da lista de eleitos.
     scores_alvo = [ctx.scores[idx] for idx in ctx.eleitos[-cadeiras_alvo:]]
+    custo_total = sum(scores_alvo)
     
-    # O custo teorico é superar o peso desses caras
+    return float(custo_total)
+
+
+def custo_takeover_51(ctx: Contexto) -> float:
+    """
+    G4 (Métrica Extra): Custo de Takeover 51%. Calcula quanto dinheiro (stake total) 
+    seria necessario para comprar a maioria absoluta (> 50%) das cadeiras do comitê.
+    """
+    k = len(ctx.eleitos)
+    if k == 0: return 0.0
+    
+    cadeiras_alvo = int(math.floor(k / 2.0)) + 1
+    
+    if cadeiras_alvo > k:
+        return 0.0
+        
+    scores_alvo = [ctx.scores[idx] for idx in ctx.eleitos[-cadeiras_alvo:]]
     custo_total = sum(scores_alvo)
     
     return float(custo_total)
@@ -336,6 +342,7 @@ METRICAS: dict[str, Callable] = {
     "palma": palma,
     "custo_por_cadeira": custo_por_cadeira,
     "custo_takeover": custo_takeover,
+    "custo_takeover_51": custo_takeover_51,
 }
 
 
@@ -446,24 +453,14 @@ if __name__ == "__main__":
     # -----------------------------------------------------------------------
     # GERAÇÃO AUTOMÁTICA DOS CENÁRIOS PARA O GRUPO 4 (COMPRA DE VOTO)
     # -----------------------------------------------------------------------
-    # O professor pede para variar pelo menos 2 parametros basicos e a patologia.
-    # Vamos variar:
-    # 1. n_holders (200, 500, 1000)
-    # 2. distribuicao (pareto, uniforme) - para ver se a desigualdade inicial afeta
-    # 3. orcamento_suborno (0.0, 0.02, 0.05, 0.1) - o parametro master do G4
     
     grade_g4 = {
         "n_holders": [200, 500, 1000],
-        "distribuicao": ["pareto", "uniforme"],
+        "distribuicao": ["pareto", "uniforme", "zipf"],
         "orcamento_suborno": [0.0, 0.02, 0.05, 0.1]
     }
     
-    # As métricas do G4 (Custo por Cadeira e Custo Takeover) analisam os scores
-    # da eleição diretamente, portanto vamos medi-las na camada "eleito".
-    # Adicionamos "gini" e "coef_nakamoto" nas 3 camadas para podermos comparar 
-    # o 'gap' de concentração como pedido no documento.
-    
-    metricas_g4 = ["custo_por_cadeira", "custo_takeover", "gini", "coef_nakamoto"]
+    metricas_g4 = ["custo_por_cadeira", "custo_takeover", "custo_takeover_51", "gini", "coef_nakamoto"]
     camadas_alvo = ["stake", "eleito", "produzido"]
     
     cenarios = gerar_cenarios(grade_g4, metricas=metricas_g4,
